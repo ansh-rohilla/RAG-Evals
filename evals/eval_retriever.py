@@ -18,7 +18,7 @@ from deepeval.metrics import (
     ContextualPrecisionMetric
 )
 
-from rag_eval.retriever import build_retriever
+from src.retriever import build_retriever
 
 load_dotenv()
 
