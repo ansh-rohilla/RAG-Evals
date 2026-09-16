@@ -3,28 +3,31 @@ import re
 import glob
 
 from dotenv import load_dotenv
+from langsmith import traceable
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
-load_dotenv()  
+load_dotenv()
 
 DATA_DIR = "data"
 DB_DIR = "chroma_store"
 
-def load_transcripts():
 
+def load_transcripts():
     docs = []
+
     for path in glob.glob(f"{DATA_DIR}/*.vtt"):
         lines = []
+
         for line in open(path):
             line = line.strip()
             if not line or line == "WEBVTT" or "-->" in line:
                 continue
             lines.append(line)
-        text = " ".join(lines)
 
+        text = " ".join(lines)
         session = re.search(r"Session[ _]*(\d+)", path).group(1)
 
         docs.append(Document(page_content=text, metadata={"session": session}))
@@ -34,8 +37,8 @@ def load_transcripts():
 
 def load_store():
     embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
     if os.path.exists(DB_DIR):
         return Chroma(persist_directory=DB_DIR, embedding_function=embeddings)
@@ -54,11 +57,14 @@ def build_retriever():
     return load_store().as_retriever(search_kwargs={"k": 5})
 
 
-if __name__ == "__main__":
-
+@traceable(run_type="retriever", name="RerankingRetriever")
+def retrieve(query: str):
     retriever = build_retriever()
+    return retriever.invoke(query)
 
-    results = retriever.invoke("what is regression testing?")
-    
+
+if __name__ == "__main__":
+    results = retrieve("what is regression testing?")
+
     for r in results:
         print(f"[Session {r.metadata['session']}] {r.page_content[:150]}...\n")
