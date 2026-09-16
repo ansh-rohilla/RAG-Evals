@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-llm = ChatGroq(model="llama3-70b-8192", temperature=0)
+llm = ChatGroq(model="openai/gpt-oss-20b")
 
 # faithfulness-first prompt: ground every claim in the context, abstain if unsure
 prompt = ChatPromptTemplate.from_template(
